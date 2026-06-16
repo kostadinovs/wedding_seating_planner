@@ -130,7 +130,7 @@ button.danger:hover{background:#F7C1C1}
 
   <div id="tab-guests" style="display:flex;flex-direction:column;flex:1;padding:14px;gap:7px">
     <div style="display:flex;gap:6px">
-      <input id="g-inp" placeholder="Ime na gost..." style="flex:1" onkeydown="if(event.key==='Enter')addGuest()">
+      <input id="g-inp" placeholder="Име на гостин..." style="flex:1" onkeydown="if(event.key==='Enter')addGuest()">
       <button class="primary" onclick="addGuest()" style="padding:6px 10px">+</button>
     </div>
     <input id="g-search" placeholder="Пребарај..." oninput="renderGuests()">
@@ -155,9 +155,9 @@ button.danger:hover{background:#F7C1C1}
   </div>
 
   <div id="tab-import" style="display:none;flex-direction:column;flex:1;padding:14px;gap:7px">
-    <div style="font-size:12px;color:var(--color-text-secondary)">Залепи листа на гости, по едно ime во ред:</div>
+    <div style="font-size:12px;color:var(--color-text-secondary)">Залепи листа на гости, по едно име во ред:</div>
     <textarea id="imp-txt" rows="10" placeholder="Ана Стојанова&#10;Марко Петров&#10;..." style="resize:vertical;font-size:13px;width:100%"></textarea>
-    <button class="primary" onclick="importGuests()" style="justify-content:center">✓ Увези гости</button>
+    <button class="primary" onclick="importGuests()" style="justify-content:center">✓ Прикачи гости</button>
     <div style="font-size:12px;color:#0F6E56" id="imp-status"></div>
   </div>
 </div>
@@ -169,7 +169,7 @@ button.danger:hover{background:#F7C1C1}
     <button onclick="autoAssign()">⚡ Авто-распоред</button>
     <button onclick="clearAssign()">↩ Исчисти распоред</button>
     <button class="danger" onclick="clearAll()">✕ Избриши сè</button>
-    <button onclick="exportTxt()">↓ Извези</button>
+    <button onclick="exportTxt()">↓ Симни список со гости</button>
   </div>
   <div class="content">
     <div id="no-tbl" style="text-align:center;padding:60px 20px;color:var(--color-text-tertiary)">
