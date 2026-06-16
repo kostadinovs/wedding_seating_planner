@@ -280,7 +280,8 @@ button.danger:hover {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.5);
+    background: rgba(0, 0, 0, 0.6); /* Потемна позадина за подобар фокус */
+    backdrop-filter: blur(4px);    /* Благо заматување на масите во позадина */
     z-index: 1000;
     align-items: center;
     justify-content: center;
@@ -672,6 +673,46 @@ window.onDragOver = function(e) {
 window.onDragLeave = function(e) {
   e.currentTarget.classList.remove('over');
 }
+/* ── КЛИК ФУНКЦИОНАЛНОСТ ЗА МОБИЛЕН (АЛТЕРНАТИВА ЗА DRAG & DROP) ── */
+// Оваа функција ќе се активира кога некој ќе кликне на гост, но само ако е на мобилен екран
+window.handleGuestClick = function(gid, name) {
+  // Проверка дали екранот е мобилен (помал од 768px)
+  if (window.innerWidth > 768) return; 
+  
+  // Креирање брзо мени со внес на број на маса
+  const response = prompt(`Внесете го бројот на масата каде што сакате да го сместите гостот: "${name}"\n(Внесете 0 за да го тргнете од маса)`);
+  
+  if (response === null) return; // Корисникот стиснал Откажи
+  
+  const tblNum = parseInt(response);
+  if (tblNum === 0) {
+    // Тргни го од маса
+    const g = window.guests.find(x => x.id === gid);
+    if (g) { g.tid = null; save(); }
+    return;
+  }
+  
+  // Најди ја масата со тој број
+  const targetTable = window.tables.find(t => t.num === tblNum);
+  if (!targetTable) {
+    alert(`Не постои маса со број ${tblNum}!`);
+    return;
+  }
+  
+  // Провери капацитет
+  const seated = window.guests.filter(x => x.tid === targetTable.id).length;
+  if (seated >= targetTable.cap) {
+    alert(`Масата бр. ${tblNum} е веќе полна!`);
+    return;
+  }
+  
+  // Смести го гостот на масата
+  const g = window.guests.find(x => x.id === gid);
+  if (g) {
+    g.tid = targetTable.id;
+    save();
+  }
+}
 window.onDrop = function(e,tid) {
   e.preventDefault();
   e.currentTarget.classList.remove('over');
@@ -752,13 +793,10 @@ window.renderGuests = function() {
     const t=g.tid?window.tables.find(x=>x.id===g.tid):null;
     const dotColor=g.tid?'#1D9E75':'#B4B2A9';
     return `<div class="g-item draggable" draggable="true"
-      ondragstart="onDragStart(event,${g.id})"
-      ondragend="onDragEnd(event)">
-      <div class="dot" style="background:${dotColor}"></div>
-      <span class="gname">${esc(g.name)}</span>
-      ${t?`<span style="font-size:11px;color:var(--color-text-secondary)">М${t.num}</span>`:'<span class="badge b-gray" style="font-size:10px">без маса</span>'}
-      <button class="xbtn" onclick="removeGuest(${g.id})" title="Избриши">✕</button>
-    </div>`;
+  ondragstart="onDragStart(event,${g.id})"
+  ondragend="onDragEnd(event)"
+  onclick="handleGuestClick(${g.id}, '${esc(g.name)}')">
+  <div class="dot" style="background:${dotColor}"></div>
   }).join('');
 }
 
@@ -803,7 +841,8 @@ function renderTables(){
         ${tg.length===0?'<div class="tempty">Влечи гост тука</div>':''}
         ${tg.map(g=>`<div class="tg-item" draggable="true"
           ondragstart="onDragStart(event,${g.id})"
-          ondragend="onDragEnd(event)">
+          ondragend="onDragEnd(event)"
+          onclick="handleGuestClick(${g.id}, '${esc(g.name)}')">
           <div class="dot" style="background:#1D9E75;width:6px;height:6px"></div>
           <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g.name)}</span>
           <button class="xbtn" onclick="removeFromTable(${g.id})" title="Отстрани">✕</button>
