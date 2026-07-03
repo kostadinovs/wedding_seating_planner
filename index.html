@@ -310,6 +310,26 @@
     }
     .pick-item.on .pick-chk { background: #1D9E75; border-color: #0F6E56; color: #fff; }
 
+    .guest-view-list {
+        border: 0.5px solid #e0e0e0; border-radius: 6px;
+    }
+    #ov-view .modal {
+        max-width: 420px;
+        max-height: none;
+    }
+    .guest-view-item {
+        display: flex; align-items: center; gap: 8px;
+        padding: 7px 10px; font-size: 13px;
+        border-bottom: 0.5px solid #e0e0e0;
+    }
+    .guest-view-item:last-child { border-bottom: none; }
+    .guest-view-item .gname { flex: 1; }
+    .table-center-hit {
+        position: absolute; border-radius: 50%; cursor: pointer; z-index: 5;
+        transition: background 0.15s;
+    }
+    .table-center-hit:hover { background: rgba(29,158,117,0.12); }
+
     @media (max-width: 768px) {
         .app { grid-template-columns: 1fr; }
         .sidebar { border-right: none; border-bottom: 0.5px solid #e0e0e0; }
@@ -355,6 +375,19 @@
   <div class="mbtns">
     <button onclick="closeOverlay('ov-add')">Откажи</button>
     <button class="primary" onclick="confirmAdd()">Додај избрани</button>
+  </div>
+</div>
+</div>
+
+<!-- TABLE GUESTS MODAL -->
+<div class="overlay" id="ov-view">
+<div class="modal">
+  <h3 id="view-title">Гости на маса</h3>
+  <div style="font-size:12px;color:#666;margin-bottom:10px" id="view-sub"></div>
+  <div class="guest-view-list" id="view-list"></div>
+  <div class="mbtns">
+    <button onclick="closeOverlay('ov-view')">Затвори</button>
+    <button class="primary" id="view-add-btn" onclick="viewAddGuests()">+ Додај гост</button>
   </div>
 </div>
 </div>
@@ -453,7 +486,7 @@ window.guests = [];
 window.tables = [];
 window.nextGid = 1;
 
-window.dragGid=null; let editId=null, addId=null, picked=new Set();
+window.dragGid=null; let editId=null, addId=null, viewId=null, picked=new Set();
 let saveTimer=null, toastTimer=null;
 
 /* ══════════════════════
@@ -627,6 +660,50 @@ window.confirmAdd = function() {
   if(toAdd.length>free){ alert(`Само ${free} слободни места!`); return; }
   toAdd.forEach(id=>{ const g=window.guests.find(x=>x.id===id); if(g) g.tid=addId; });
   closeOverlay('ov-add'); renderAll(); save();
+};
+
+/* ══════════════════════
+   VIEW TABLE GUESTS MODAL
+══════════════════════ */
+window.openTableGuests = function(id) {
+  const t = window.tables.find(x=>x.id===id); if(!t) return;
+  viewId = id;
+  const tg = window.guests.filter(g=>g.tid===id);
+  document.getElementById('view-title').textContent =
+    'Маса ' + t.num + (t.label ? ' — ' + t.label : '');
+  document.getElementById('view-sub').textContent =
+    tg.length + ' / ' + t.cap + ' места зафатени';
+  renderTableGuestList();
+  document.getElementById('ov-view').classList.add('show');
+};
+
+function renderTableGuestList() {
+  const t = window.tables.find(x=>x.id===viewId); if(!t) return;
+  const tg = window.guests.filter(g=>g.tid===viewId);
+  const el = document.getElementById('view-list');
+  document.getElementById('view-sub').textContent =
+    tg.length + ' / ' + t.cap + ' места зафатени';
+  if (!tg.length) {
+    el.innerHTML = '<div style="padding:20px;text-align:center;font-size:13px;color:#999">Нема гости на оваа маса.</div>';
+    return;
+  }
+  el.innerHTML = tg.map(g => `
+    <div class="guest-view-item">
+      <div class="dot" style="background:#1D9E75"></div>
+      <span class="gname">${esc(g.name)}</span>
+      <button class="xbtn" onclick="removeFromTableView(${g.id})" title="Отстрани од маса">✕</button>
+    </div>`).join('');
+}
+
+window.removeFromTableView = function(gid) {
+  removeFromTable(gid);
+  if (viewId) renderTableGuestList();
+};
+
+window.viewAddGuests = function() {
+  const id = viewId;
+  closeOverlay('ov-view');
+  if (id) openAddGuests(id);
 };
 
 /* ══════════════════════
@@ -833,6 +910,10 @@ function buildTableSVG(t) {
         <text x="${CX}" y="${CY+10}" class="table-center-text">${tg.length}/${cap}</text>
         ${svgChairs}
       </svg>
+      <div class="table-center-hit"
+        style="left:${(CX-TR).toFixed(1)}px;top:${(CY-TR).toFixed(1)}px;width:${TR*2}px;height:${TR*2}px;"
+        title="Прикажи гости"
+        onclick="openTableGuests('${t.id}')"></div>
       ${htmlOverlays}
     </div>
 
@@ -917,12 +998,14 @@ window.renderAll = function() {
   window.renderGuests();
   renderTables();
   if(document.getElementById('tab-tables').style.display==='flex') renderSidebar();
+  if(viewId && document.getElementById('ov-view').classList.contains('show')) renderTableGuestList();
 };
 
 /* MODALS CLOSE */
 window.closeOverlay = function(id){ document.getElementById(id).classList.remove('show'); };
 document.getElementById('ov-edit').addEventListener('click',function(e){if(e.target===this)closeOverlay('ov-edit');});
 document.getElementById('ov-add').addEventListener('click',function(e){if(e.target===this)closeOverlay('ov-add');});
+document.getElementById('ov-view').addEventListener('click',function(e){if(e.target===this)closeOverlay('ov-view');});
 document.getElementById('g-inp').addEventListener('keydown',e=>{ if(e.key==='Enter') window.addGuest(); });
 </script>
 </body>
