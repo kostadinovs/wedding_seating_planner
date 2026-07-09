@@ -90,13 +90,32 @@
         display: flex; align-items: center; gap: 7px;
         padding: 7px; border-radius: 6px;
         border: 0.5px solid var(--color-border-tertiary, #e0e0e0);
+        border-left: 3px solid transparent;
         margin-bottom: 4px;
         background: var(--color-background-primary, #fff);
         user-select: none;
     }
     .g-item.draggable { cursor: grab; }
     .g-item.dragging { opacity: 0.4; border-style: dashed; }
+    .g-item.side-groom { border-left-color: #2563EB; }
+    .g-item.side-bride { border-left-color: #DB2777; }
     .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Side sections (Младоженец / Невеста) */
+    .side-section { display: flex; flex-direction: column; gap: 6px; }
+    .side-head {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 12px; font-weight: 600; padding: 2px 0;
+    }
+    .side-head.groom { color: #2563EB; }
+    .side-head.bride { color: #DB2777; }
+    .side-count {
+        font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 999px;
+        background: var(--color-background-secondary, #f0f0f0);
+    }
+    .side-add-row { display: flex; gap: 6px; }
+    .side-scroll { max-height: 190px; overflow-y: auto; }
+    .side-divider { border: none; border-top: 0.5px solid var(--color-border-tertiary, #e0e0e0); margin: 2px 0; }
     .gname { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .xbtn {
         width: 24px; height: 24px; border: none; border-radius: 50%;
@@ -411,18 +430,33 @@
     <div class="tab" onclick="switchTab('import')">Листа</div>
   </div>
 
-  <div id="tab-guests" style="display:flex;flex-direction:column;flex:1;padding:14px;gap:7px">
-    <div style="display:flex;gap:6px">
-      <input id="g-inp" placeholder="Име на гостин..." style="flex:1">
-      <button class="primary" onclick="addGuest()" style="padding:6px 10px">+</button>
-    </div>
+  <div id="tab-guests" style="display:flex;flex-direction:column;flex:1;padding:14px;gap:9px;overflow-y:auto">
     <input id="g-search" placeholder="Пребарај..." oninput="renderGuests()">
     <select id="g-filter" onchange="renderGuests()" style="font-size:12px">
       <option value="">Сите гости</option>
       <option value="no">Неразпоредени</option>
       <option value="yes">Распоредени</option>
     </select>
-    <div class="scroll" id="g-list"></div>
+
+    <div class="side-section">
+      <div class="side-head groom">🤵 Гости на младоженецот <span class="side-count" id="cnt-groom">0</span></div>
+      <div class="side-add-row">
+        <input id="g-inp-groom" placeholder="Име на гостин..." style="flex:1">
+        <button class="primary" onclick="addGuest('groom')" style="padding:6px 10px">+</button>
+      </div>
+      <div class="side-scroll" id="g-list-groom"></div>
+    </div>
+
+    <hr class="side-divider">
+
+    <div class="side-section">
+      <div class="side-head bride">👰 Гости на невестата <span class="side-count" id="cnt-bride">0</span></div>
+      <div class="side-add-row">
+        <input id="g-inp-bride" placeholder="Име на гостин..." style="flex:1">
+        <button class="primary" onclick="addGuest('bride')" style="padding:6px 10px">+</button>
+      </div>
+      <div class="side-scroll" id="g-list-bride"></div>
+    </div>
   </div>
 
   <div id="tab-tables" style="display:none;flex-direction:column;flex:1;padding:14px;gap:7px">
@@ -437,9 +471,15 @@
     <div class="scroll" id="t-sidebar"></div>
   </div>
 
-  <div id="tab-import" style="display:none;flex-direction:column;flex:1;padding:14px;gap:7px">
-    <div style="font-size:12px;color:#666">Залепи листа на гости, по едно име во ред:</div>
-    <textarea id="imp-txt" rows="10" placeholder="Ана Стојанова&#10;Марко Петров&#10;..." style="resize:vertical;font-size:13px"></textarea>
+  <div id="tab-import" style="display:flex;flex-direction:column;flex:1;padding:14px;gap:10px;overflow-y:auto">
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#2563EB;margin-bottom:5px">🤵 Гости на младоженецот, по едно име во ред:</div>
+      <textarea id="imp-txt-groom" rows="6" placeholder="Ана Стојанова&#10;Марко Петров&#10;..." style="resize:vertical;font-size:13px"></textarea>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:600;color:#DB2777;margin-bottom:5px">👰 Гости на невестата, по едно име во ред:</div>
+      <textarea id="imp-txt-bride" rows="6" placeholder="Јана Иванова&#10;Стефан Стевановски&#10;..." style="resize:vertical;font-size:13px"></textarea>
+    </div>
     <button class="primary" onclick="importGuests()" style="justify-content:center">✓ Прикачи гости</button>
     <div style="font-size:12px;color:#0F6E56" id="imp-status"></div>
   </div>
@@ -536,11 +576,11 @@ window.switchTab = function(tab) {
 /* ══════════════════════
    GUESTS
 ══════════════════════ */
-window.addGuest = function() {
-  const inp = document.getElementById('g-inp');
+window.addGuest = function(side) {
+  const inp = document.getElementById(side === 'bride' ? 'g-inp-bride' : 'g-inp-groom');
   const name = inp.value.trim(); if (!name) return;
-  window.guests.push({id: window.nextGid++, name, tid: null});
-  inp.value = ''; renderAll(); save();
+  window.guests.push({id: window.nextGid++, name, tid: null, side: side === 'bride' ? 'bride' : 'groom'});
+  inp.value = ''; inp.focus(); renderAll(); save();
 };
 
 window.removeGuest = function(id) {
@@ -548,14 +588,22 @@ window.removeGuest = function(id) {
 };
 
 window.importGuests = function() {
-  const lines = document.getElementById('imp-txt').value.split('\n').map(l=>l.trim()).filter(Boolean);
-  let added = 0;
-  lines.forEach(name => {
+  const groomLines = document.getElementById('imp-txt-groom').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  const brideLines = document.getElementById('imp-txt-bride').value.split('\n').map(l=>l.trim()).filter(Boolean);
+  let added = 0, dup = 0;
+  groomLines.forEach(name => {
     if (!window.guests.find(g => g.name.toLowerCase()===name.toLowerCase())) {
-      window.guests.push({id: window.nextGid++, name, tid: null}); added++;
-    }
+      window.guests.push({id: window.nextGid++, name, tid: null, side: 'groom'}); added++;
+    } else dup++;
   });
-  document.getElementById('imp-status').textContent = `✓ Додадени ${added} гости (${lines.length-added} дупликати).`;
+  brideLines.forEach(name => {
+    if (!window.guests.find(g => g.name.toLowerCase()===name.toLowerCase())) {
+      window.guests.push({id: window.nextGid++, name, tid: null, side: 'bride'}); added++;
+    } else dup++;
+  });
+  document.getElementById('imp-status').textContent = `✓ Додадени ${added} гости (${dup} дупликати).`;
+  document.getElementById('imp-txt-groom').value = '';
+  document.getElementById('imp-txt-bride').value = '';
   renderAll(); save();
 };
 
@@ -641,8 +689,10 @@ window.renderPickList = function() {
   if(!un.length){ el.innerHTML='<div style="padding:14px;text-align:center;font-size:13px;color:#999">Нема неразпоредени гости.</div>'; return; }
   el.innerHTML = un.map(g=>{
     const on = picked.has(g.id);
+    const sideColor = g.side==='bride' ? '#DB2777' : '#2563EB';
     return `<div class="pick-item${on?' on':''}" onclick="togglePick(${g.id})">
       <div class="pick-chk">${on?'✓':''}</div>
+      <div class="dot" style="background:${sideColor}"></div>
       <span>${esc(g.name)}</span>
     </div>`;
   }).join('');
@@ -687,12 +737,15 @@ function renderTableGuestList() {
     el.innerHTML = '<div style="padding:20px;text-align:center;font-size:13px;color:#999">Нема гости на оваа маса.</div>';
     return;
   }
-  el.innerHTML = tg.map(g => `
+  el.innerHTML = tg.map(g => {
+    const sideColor = g.side==='bride' ? '#DB2777' : '#2563EB';
+    return `
     <div class="guest-view-item">
-      <div class="dot" style="background:#1D9E75"></div>
+      <div class="dot" style="background:${sideColor}"></div>
       <span class="gname">${esc(g.name)}</span>
       <button class="xbtn" onclick="removeFromTableView(${g.id})" title="Отстрани од маса">✕</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 window.removeFromTableView = function(gid) {
@@ -737,14 +790,15 @@ window.clearAll = function() {
 };
 
 window.exportTxt = function() {
+  const sideTag = g => g.side==='bride' ? '(Н)' : '(М)';
   const lines = ['РАСПОРЕД НА ГОСТИ ПО МАСИ\n'];
   [...window.tables].sort((a,b)=>a.num-b.num).forEach(t=>{
     const tg = window.guests.filter(g=>g.tid===t.id);
     lines.push(`\nМаса ${t.num}${t.label?' — '+t.label:''} (${tg.length}/${t.cap})`);
-    tg.forEach(g=>lines.push('  - '+g.name));
+    tg.forEach(g=>lines.push('  - '+g.name+' '+sideTag(g)));
   });
   const un = window.guests.filter(g=>!g.tid);
-  if(un.length){ lines.push('\nНЕРАСПОРЕДЕНИ:'); un.forEach(g=>lines.push('  - '+g.name)); }
+  if(un.length){ lines.push('\nНЕРАСПОРЕДЕНИ:'); un.forEach(g=>lines.push('  - '+g.name+' '+sideTag(g))); }
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));
   a.download = 'svadba-raspored.txt'; a.click();
@@ -854,10 +908,10 @@ function buildTableSVG(t) {
     const guest  = tg[i] || null;
     const init   = guest ? guest.name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase() : '';
     const fill   = guest ? '#1D9E75' : '#e8e4de';
-    const stroke = guest ? '#0F6E56' : '#c8c0b4';
+    const stroke = guest ? (guest.side==='bride' ? '#DB2777' : '#2563EB') : '#c8c0b4';
 
     svgChairs += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${CR}"
-      fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+      fill="${fill}" stroke="${stroke}" stroke-width="${guest?2.5:1.5}"/>
     ${init ? `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}"
       font-size="8" font-weight="600" fill="#fff" text-anchor="middle"
       dominant-baseline="middle" style="font-family:sans-serif">${init}</text>` : ''}`;
@@ -946,28 +1000,41 @@ function renderStats(){
   document.getElementById('s-free').textContent=tot-asgn;
 }
 
+function guestItemHtml(g) {
+  const t = g.tid ? window.tables.find(x=>x.id===g.tid) : null;
+  const sideCls = g.side === 'bride' ? 'side-bride' : 'side-groom';
+  return `<div class="g-item draggable ${sideCls}" draggable="true"
+    ondragstart="onDragStart(event,${g.id})"
+    ondragend="onDragEnd(event)">
+    <div class="dot" style="background:${g.tid?'#1D9E75':'#B4B2A9'}"></div>
+    <span class="gname">${esc(g.name)}</span>
+    ${t?`<span style="font-size:11px;color:#666">М${t.num}</span>`:'<span class="badge b-gray" style="font-size:10px">без маса</span>'}
+    <button class="xbtn" onclick="event.stopPropagation();removeGuest(${g.id})" title="Избриши">✕</button>
+  </div>`;
+}
+
 window.renderGuests = function() {
   const q = document.getElementById('g-search').value.toLowerCase();
   const f = document.getElementById('g-filter').value;
-  const list = window.guests.filter(g=>{
+  const passes = g => {
     if(q&&!g.name.toLowerCase().includes(q)) return false;
     if(f==='yes'&&!g.tid) return false;
     if(f==='no'&&g.tid) return false;
     return true;
-  });
-  const el = document.getElementById('g-list');
-  if(!list.length){ el.innerHTML='<div style="font-size:12px;color:#999;text-align:center;padding:10px">Нема гости.</div>'; return; }
-  el.innerHTML = list.map(g=>{
-    const t = g.tid ? window.tables.find(x=>x.id===g.tid) : null;
-    return `<div class="g-item draggable" draggable="true"
-      ondragstart="onDragStart(event,${g.id})"
-      ondragend="onDragEnd(event)">
-      <div class="dot" style="background:${g.tid?'#1D9E75':'#B4B2A9'}"></div>
-      <span class="gname">${esc(g.name)}</span>
-      ${t?`<span style="font-size:11px;color:#666">М${t.num}</span>`:'<span class="badge b-gray" style="font-size:10px">без маса</span>'}
-      <button class="xbtn" onclick="event.stopPropagation();removeGuest(${g.id})" title="Избриши">✕</button>
-    </div>`;
-  }).join('');
+  };
+  const groom = window.guests.filter(g=>g.side!=='bride').filter(passes);
+  const bride = window.guests.filter(g=>g.side==='bride').filter(passes);
+
+  document.getElementById('cnt-groom').textContent = window.guests.filter(g=>g.side!=='bride').length;
+  document.getElementById('cnt-bride').textContent = window.guests.filter(g=>g.side==='bride').length;
+
+  const elG = document.getElementById('g-list-groom');
+  elG.innerHTML = groom.length ? groom.map(guestItemHtml).join('')
+    : '<div style="font-size:12px;color:#999;text-align:center;padding:10px">Нема гости.</div>';
+
+  const elB = document.getElementById('g-list-bride');
+  elB.innerHTML = bride.length ? bride.map(guestItemHtml).join('')
+    : '<div style="font-size:12px;color:#999;text-align:center;padding:10px">Нема гости.</div>';
 };
 
 function renderSidebar(){
@@ -1006,7 +1073,8 @@ window.closeOverlay = function(id){ document.getElementById(id).classList.remove
 document.getElementById('ov-edit').addEventListener('click',function(e){if(e.target===this)closeOverlay('ov-edit');});
 document.getElementById('ov-add').addEventListener('click',function(e){if(e.target===this)closeOverlay('ov-add');});
 document.getElementById('ov-view').addEventListener('click',function(e){if(e.target===this)closeOverlay('ov-view');});
-document.getElementById('g-inp').addEventListener('keydown',e=>{ if(e.key==='Enter') window.addGuest(); });
+document.getElementById('g-inp-groom').addEventListener('keydown',e=>{ if(e.key==='Enter') window.addGuest('groom'); });
+document.getElementById('g-inp-bride').addEventListener('keydown',e=>{ if(e.key==='Enter') window.addGuest('bride'); });
 </script>
 </body>
 </html>
