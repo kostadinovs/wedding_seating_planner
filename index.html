@@ -150,12 +150,13 @@
         align-items: center;
         background: var(--color-background-primary, #fff);
         border: 0.5px solid var(--color-border-tertiary, #e0e0e0);
-        border-radius: 12px;
+        border-radius: 14px;
         padding: 14px 10px 10px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        transition: box-shadow 0.2s;
+        transition: box-shadow 0.2s, transform 0.2s;
     }
-    .tcard.drop-target { box-shadow: 0 0 0 2px #1D9E75, 0 4px 16px rgba(29,158,117,0.2); }
+    .tcard:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.09); transform: translateY(-1px); }
+    .tcard.drop-target { box-shadow: 0 0 0 2px #1D9E75, 0 4px 16px rgba(29,158,117,0.2); transform: none; }
 
     /* Наслов на картичката */
     .tcard-header {
@@ -180,18 +181,17 @@
     .table-scene.droppable { cursor: copy; }
     .table-scene.over .table-circle-bg { fill: #d4f0e5; }
 
-    /* Централниот круг (маса) */
+    /* Централниот круг (маса) — топла ткаенина со мазен градиент */
     .table-circle-bg {
-        fill: #f7f0e6;
-        stroke: #c8b89a;
-        stroke-width: 2.5;
+        stroke: #c9a961;
+        stroke-width: 2;
         transition: fill 0.2s;
     }
 
     /* Текст во центарот */
     .table-center-text {
-        font-size: 12px;
-        fill: #888;
+        font-size: 11.5px;
+        fill: #a68a55;
         text-anchor: middle;
         dominant-baseline: middle;
         pointer-events: none;
@@ -200,60 +200,24 @@
     .table-center-num {
         font-size: 22px;
         font-weight: 600;
-        fill: #555;
+        fill: #7a6640;
         text-anchor: middle;
         dominant-baseline: middle;
         pointer-events: none;
         font-family: var(--font-sans, sans-serif);
     }
 
-    /* Столче — попунето */
-    .chair {
-        transition: opacity 0.15s;
-    }
-    .chair-occupied:hover circle {
-        stroke-width: 2.5;
-        stroke: #0F6E56;
-    }
-    .chair-circle-empty {
-        fill: #e8e4de;
-        stroke: #c8c0b4;
-        stroke-width: 1.5;
-    }
-    .chair-circle-occupied {
-        fill: #1D9E75;
-        stroke: #0F6E56;
-        stroke-width: 1.5;
-        transition: fill 0.15s, stroke-width 0.15s;
-    }
-    .chair-circle-drag-over {
-        fill: #a8dfc9;
-        stroke: #1D9E75;
-        stroke-width: 2;
-    }
-    /* Кога влечиме, сите drop-target карти свеат зелено поизразено */
-    .tcard.drop-target {
-        box-shadow: 0 0 0 2.5px #1D9E75, 0 4px 20px rgba(29,158,117,0.25);
-    }
+    /* Кога влечиме, drop-target картата свети зелено, а масата се осветлува */
     .tcard.drop-target .table-circle-bg {
         fill: #d4f0e5;
     }
-    .chair-text {
-        font-size: 6px;
-        fill: #fff;
-        text-anchor: middle;
-        dominant-baseline: middle;
+
+    /* Столче — мал "потпирач" зад седиштето, свртен кон надвор */
+    .chair-back {
         pointer-events: none;
-        font-family: var(--font-sans, sans-serif);
     }
-    .chair-initial {
-        font-size: 8px;
-        font-weight: 600;
-        fill: #fff;
-        text-anchor: middle;
-        dominant-baseline: middle;
-        pointer-events: none;
-        font-family: var(--font-sans, sans-serif);
+    .chair-seat {
+        transition: fill 0.15s, stroke-width 0.15s;
     }
 
     /* Тупе информации под масата */
@@ -896,25 +860,37 @@ function buildTableSVG(t) {
   const SIZE = 170;
   const CX   = SIZE / 2, CY = SIZE / 2;
   const TR   = 46;
-  const CR   = 14;
-  const SR   = TR + CR + 6;
+  const CR   = 13;
+  const SR   = TR + CR + 7;
 
   let svgChairs   = '';
   let htmlOverlays = '';
 
   for (let i = 0; i < cap; i++) {
     const angle  = (2 * Math.PI * i / cap) - Math.PI / 2;
-    const cx     = CX + SR * Math.cos(angle);
-    const cy     = CY + SR * Math.sin(angle);
+    const cos    = Math.cos(angle), sin = Math.sin(angle);
+    const cx     = CX + SR * cos;
+    const cy     = CY + SR * sin;
     const guest  = tg[i] || null;
     const init   = guest ? guest.name.trim().split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase() : '';
-    const fill   = guest ? '#1D9E75' : '#e8e4de';
-    const stroke = guest ? (guest.side==='bride' ? '#DB2777' : '#2563EB') : '#c8c0b4';
+    const fill   = guest ? (guest.side==='bride' ? '#DB2777' : '#2563EB') : '#f5efe0';
+    const stroke = guest ? (guest.side==='bride' ? '#8F1651' : '#1E3A8A') : '#c9b98f';
 
-    svgChairs += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${CR}"
-      fill="${fill}" stroke="${stroke}" stroke-width="${guest?2.5:1.5}"/>
-    ${init ? `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}"
-      font-size="8" font-weight="600" fill="#fff" text-anchor="middle"
+    // Мал потпирач зад столчето, свртен кон надвор од масата — дава изглед на вистинско столче
+    const backR   = SR + CR - 3;
+    const bx      = CX + backR * cos;
+    const by      = CY + backR * sin;
+    const angDeg  = (angle * 180 / Math.PI) + 90;
+    const backW   = CR * 1.5, backH = 3.4;
+
+    svgChairs += `<rect class="chair-back" x="${(bx-backW/2).toFixed(1)}" y="${(by-backH/2).toFixed(1)}"
+        width="${backW.toFixed(1)}" height="${backH}" rx="1.7"
+        fill="${stroke}" opacity="${guest?0.9:0.55}"
+        transform="rotate(${angDeg.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)})"/>
+      <circle class="chair-seat" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${CR}"
+        fill="${fill}" stroke="${stroke}" stroke-width="${guest?1.8:1.3}"/>
+    ${init ? `<text x="${cx.toFixed(1)}" y="${(cy+0.5).toFixed(1)}"
+      font-size="8.5" font-weight="600" fill="#fff" text-anchor="middle"
       dominant-baseline="middle" style="font-family:sans-serif">${init}</text>` : ''}`;
 
     if (guest) {
@@ -939,6 +915,7 @@ function buildTableSVG(t) {
   const pct   = cap > 0 ? Math.round(tg.length / cap * 100) : 0;
   const badge = pct >= 100 ? 'b-red' : pct >= 80 ? 'b-amber' : 'b-green';
   const tname = t.label || ('Маса ' + t.num);
+  const gradId = 'cloth-' + t.id;
 
   return `
   <div class="tcard" id="tcard-${t.id}"
@@ -957,10 +934,17 @@ function buildTableSVG(t) {
       <svg width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}"
            style="position:absolute;top:0;left:0;pointer-events:none"
            xmlns="http://www.w3.org/2000/svg">
-        <circle cx="${CX}" cy="${CY}" r="${TR+2}" fill="rgba(0,0,0,0.06)"/>
-        <circle cx="${CX}" cy="${CY}" r="${TR}" class="table-circle-bg"/>
-        <circle cx="${CX}" cy="${CY}" r="${TR-8}" fill="none" stroke="#d4c9b5"
-                stroke-width="1" stroke-dasharray="4,4"/>
+        <defs>
+          <radialGradient id="${gradId}" cx="50%" cy="38%" r="68%">
+            <stop offset="0%" stop-color="#fdf9f0"/>
+            <stop offset="65%" stop-color="#f6ecd6"/>
+            <stop offset="100%" stop-color="#e9d8ad"/>
+          </radialGradient>
+        </defs>
+        <circle cx="${CX}" cy="${CY}" r="${TR+3}" fill="rgba(0,0,0,0.07)"/>
+        <circle cx="${CX}" cy="${CY}" r="${TR}" class="table-circle-bg" fill="url(#${gradId})"/>
+        <circle cx="${CX}" cy="${CY}" r="${TR-9}" fill="none" stroke="#ddc9a0"
+                stroke-width="1" stroke-dasharray="3,4"/>
         <text x="${CX}" y="${CY-7}" class="table-center-num">${t.num}</text>
         <text x="${CX}" y="${CY+10}" class="table-center-text">${tg.length}/${cap}</text>
         ${svgChairs}
