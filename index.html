@@ -15,7 +15,7 @@
 
     .app {
         display: grid;
-        grid-template-columns: 290px 1fr;
+        grid-template-columns: 320px 1fr;
         min-height: 100vh;
     }
 
@@ -114,7 +114,7 @@
         background: var(--color-background-secondary, #f0f0f0);
     }
     .side-add-row { display: flex; gap: 6px; }
-    .side-scroll { max-height: 190px; overflow-y: auto; }
+    .side-scroll { max-height: 360px; overflow-y: auto; }
     .side-divider { border: none; border-top: 0.5px solid var(--color-border-tertiary, #e0e0e0); margin: 2px 0; }
     .gname { flex: 1; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .xbtn {
@@ -353,6 +353,7 @@
         .app { grid-template-columns: 1fr; }
         .sidebar { border-right: none; border-bottom: 0.5px solid #e0e0e0; }
         .scroll { max-height: 200px; }
+        .side-scroll { max-height: 220px; }
         #tbl-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
         .table-scene { width: 140px; height: 140px; }
         .topbar button { flex: 1 1 calc(50% - 6px); justify-content: center; font-size: 12px; padding: 8px 4px; }
