@@ -555,18 +555,14 @@ window.removeGuest = function(id) {
 window.importGuests = function() {
   const groomLines = document.getElementById('imp-txt-groom').value.split('\n').map(l=>l.trim()).filter(Boolean);
   const brideLines = document.getElementById('imp-txt-bride').value.split('\n').map(l=>l.trim()).filter(Boolean);
-  let added = 0, dup = 0;
+  let added = 0;
   groomLines.forEach(name => {
-    if (!window.guests.find(g => g.name.toLowerCase()===name.toLowerCase())) {
-      window.guests.push({id: window.nextGid++, name, tid: null, side: 'groom'}); added++;
-    } else dup++;
+    window.guests.push({id: window.nextGid++, name, tid: null, side: 'groom'}); added++;
   });
   brideLines.forEach(name => {
-    if (!window.guests.find(g => g.name.toLowerCase()===name.toLowerCase())) {
-      window.guests.push({id: window.nextGid++, name, tid: null, side: 'bride'}); added++;
-    } else dup++;
+    window.guests.push({id: window.nextGid++, name, tid: null, side: 'bride'}); added++;
   });
-  document.getElementById('imp-status').textContent = `✓ Додадени ${added} гости (${dup} дупликати).`;
+  document.getElementById('imp-status').textContent = `✓ Додадени ${added} гости.`;
   document.getElementById('imp-txt-groom').value = '';
   document.getElementById('imp-txt-bride').value = '';
   renderAll(); save();
